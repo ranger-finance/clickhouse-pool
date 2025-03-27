@@ -38,9 +38,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     // Configure retry policy
     let retry_config = RetryConfig::default();
+
+    let datalake_config = DatalakeConfig::new(config, retry_config);
     
     // Create pool
-    let pool = ClickHousePool::new(
+    let pool = ClickhouseConnectionPool::new(
         config,
         retry_config,
         None, // Optional metrics
@@ -49,15 +51,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize pool (creates initial connections)
     pool.initialize().await?;
     
-    // Execute a query with automatic retries
-    let result = pool.execute_with_retry("SELECT 1").await?;
-    
-    // Process result
-    let mut stream = result.into_stream();
-    while let Some(row) = stream.try_next().await? {
-        println!("Value: {}", row.get::<i32, _>(0)?);
-    }
-    
+    // Check examples/simple-clickhouse for more notes
+    // on how to utilize PoolManager for retries
+    // with exponential backoff
+
     // Graceful shutdown (waits for in-use connections)
     pool.shutdown().await?;
     

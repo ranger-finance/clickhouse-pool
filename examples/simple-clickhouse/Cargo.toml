@@ -1,0 +1,24 @@
+[package]
+name = "simple-clickhouse"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clickhouse-pool = { path = "../../" }
+serde = "1.0"
+serde_derive = "1.0"
+url = "2.5.2"
+clickhouse = { version = "0.13.1", features = ["native-tls"]}
+deadpool = "0.12.2"
+tokio = { version = "1.14.1", features = ["full"] }
+log = { version = "^0.4.21", features = ["kv_serde"] }
+futures = "0.3.17"
+futures-util = "0.3"
+anyhow = "1.0"
+thiserror = "1.0.31"
+uuid = { version="1.6.1", features = ["serde", "v4"] }
+prometheus = "0.13"
+actix-web = "4"
+actix-web-prom = "0.6"
+env_logger = "0.10"
+chrono = "0.4.20"
