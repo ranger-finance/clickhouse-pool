@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use anyhow::Result;
-use crate::metrics::SharedRegistrar;
 use crate::config::DatalakeConfig;
+use crate::metrics::SharedRegistrar;
 use crate::pool::{get_query_type, ClickhouseConnectionPool, ClickhouseError};
+use anyhow::Result;
 
 pub struct PoolManager {
     pool: Arc<ClickhouseConnectionPool>,
