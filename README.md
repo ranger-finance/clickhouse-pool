@@ -28,13 +28,13 @@ Add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-clickhouse-pool = "0.1.0"
+clickhouse-connection-pool = "0.1.0"
 ```
 
 ## Quickstart
 
 ```rust
-use clickhouse_pool::{ClickHouseConfig, ClickHousePool, RetryConfig};
+use clickhouse_connection_pool::{ClickHouseConfig, ClickHousePool, RetryConfig};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

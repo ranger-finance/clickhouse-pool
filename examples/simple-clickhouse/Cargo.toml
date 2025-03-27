@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-clickhouse-pool = { path = "../../" }
+clickhouse-connection-pool = { path = "../../" }
 serde = "1.0"
 serde_derive = "1.0"
 url = "2.5.2"

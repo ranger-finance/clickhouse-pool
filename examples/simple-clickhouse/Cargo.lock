@@ -426,7 +426,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "clickhouse-pool"
+name = "clickhouse-connection-pool"
 version = "0.1.0"
 dependencies = [
  "actix-web-prom",
@@ -1726,7 +1726,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "clickhouse",
- "clickhouse-pool",
+ "clickhouse-connection-pool",
  "deadpool",
  "env_logger",
  "futures",

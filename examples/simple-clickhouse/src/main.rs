@@ -3,7 +3,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 use tokio::signal;
 use tokio::time::sleep;
-use clickhouse_pool::{
+use clickhouse_connection_pool::{
     pool_manager::PoolManager,
     config::{DatalakeConfig, ClickhouseConfig, RetryConfig}
 };

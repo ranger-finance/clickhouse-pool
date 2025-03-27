@@ -1,5 +1,5 @@
 [package]
-name = "clickhouse-pool"
+name = "clickhouse-connection-pool"
 version = "0.1.0"
 description = "A connection pooling library for ClickHouse in Rust, built on top of deadpool."
 edition = "2021"
