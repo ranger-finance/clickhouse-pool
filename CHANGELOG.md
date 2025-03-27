@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Note:** Version 0 of Semantic Versioning is handled differently from version 1 and above.
 The minor version will be incremented upon a breaking change and the patch version will be incremented for features.
 
-## [1.0.0] - 2025-03-27
+## [0.1.0] - 2025-03-27
 
 ### Features
 
@@ -17,6 +17,7 @@ The minor version will be incremented upon a breaking change and the patch versi
 - Add configurable retry mechanism using RetryConfig
 - Add PoolManager to manage connection pools and retry using exponential backoff
 - Add examples/simple-clickhouse
+- Add configurable metrics tracking using Prometheus
 
 ### Fixes
 
