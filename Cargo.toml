@@ -1,0 +1,25 @@
+[package]
+name = "clickhouse-pool"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clickhouse = { version = "0.13.1", features = ["native-tls"]}
+deadpool = "0.12.2"
+
+tokio = { version = "1.14.1", features = ["full"] }
+futures = "0.3.17"
+futures-util = "0.3"
+
+serde = "1.0"
+serde_derive = "1.0"
+log = { version = "^0.4.21", features = ["kv_serde"] }
+prometheus = "0.13"
+actix-web-prom = "0.6"
+url = "2.5.2"
+anyhow = "1.0"
+thiserror = "1.0.31"
+
+[dev-dependencies]
+uuid = { version="1.6.1", features = ["serde", "v4"] }
+actix-web = "4"
