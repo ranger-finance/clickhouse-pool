@@ -1,5 +1,16 @@
 # ClickHouse Connection Pool
 
+<div align="center">
+  </br>
+  <p>
+    <img height="300" src="https://pbs.twimg.com/profile_banners/1764920763360899072/1711621031/1500x500" />
+  </p>
+  <p>
+    <strong>Clickhouse Connection Pool</strong>
+  </p>
+</div>
+
+
 A connection pooling library for ClickHouse in Rust, built on top of deadpool.
 
 ## Features
