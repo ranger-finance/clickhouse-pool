@@ -105,8 +105,9 @@ impl PoolManager {
     }
 
     pub async fn execute_select_with_retry<T>(&self, query: &str) -> Result<Vec<T>, ClickhouseError>
-    
-    where T: clickhouse::Row + DeserializeOwned + Send + 'static {
+    where
+        T: clickhouse::Row + DeserializeOwned + Send + 'static,
+    {
         let mut attempt = 0;
         let max_retries = self.config.retry.max_retries;
 
