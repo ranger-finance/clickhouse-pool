@@ -5,7 +5,8 @@ use tokio::signal;
 use tokio::time::sleep;
 use clickhouse_connection_pool::{
     pool_manager::PoolManager,
-    config::{DatalakeConfig, ClickhouseConfig, RetryConfig}
+    config::{DatalakeConfig, ClickhouseConfig, RetryConfig},
+    traits::Model
 };
 use anyhow::Result;
 use std::time::Duration;
@@ -30,6 +31,10 @@ async fn main() -> Result<()> {
     println!("Awake...");
         
     let _ = insert_test_data(&pool_manager).await;
+    sleep(Duration::from_secs(3)).await;
+
+    let prices = get_all_prices(&pool_manager, Some(20), None).await?; 
+    println!("Retrieved 20 prices: {:?}", prices);
     
     println!("Service is running. Press Ctrl+C to shutdown.");
     match signal::ctrl_c().await {
@@ -114,4 +119,12 @@ async fn insert_test_data(pool_manager: &Arc<PoolManager>) -> Result<(), Box<dyn
     println!("Inserted {} test prices", prices.len());
     
     Ok(())
+}
+
+async fn get_all_prices(pool_manager: &Arc<PoolManager>, limit: Option<u64>, offset: Option<u64>) -> Result<Vec<Price>> {
+    let query = Price::build_query(None, limit, offset);
+    
+    let result = pool_manager.execute_select_with_retry(&query).await?;
+        
+    Ok(result)
 }

@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Note:** Version 0 of Semantic Versioning is handled differently from version 1 and above.
 The minor version will be incremented upon a breaking change and the patch version will be incremented for features.
 
+## [0.1.1] - 2025-04-10
+
+### Features
+
+- Add trait Model for consistent functionality across all model objects.
+- Add execute_select_with_retry for select queries with customizable where clauses, limits, and offset
+- Update example for the same
+
+### Fixes
+
+### Breaking
+
 ## [0.1.0] - 2025-03-27
 
 ### Features

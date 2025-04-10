@@ -1,10 +1,16 @@
 use chrono::{DateTime, Utc};
+use clickhouse::Row;
 use uuid::Uuid;
+use clickhouse_connection_pool::traits::Model;
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Row, Serialize, Deserialize)]
 pub struct Price {
+    #[serde(with = "clickhouse::serde::uuid")]
     pub id: Uuid,
+    #[serde(with = "clickhouse::serde::chrono::datetime64::millis")]
     pub created_at: DateTime<Utc>,
+    #[serde(with = "clickhouse::serde::chrono::datetime64::millis")]
     pub updated_at: DateTime<Utc>,
     pub asset: String,
     pub price: f64,
@@ -26,8 +32,13 @@ impl Price {
             price,
         }
     }
+}
 
-    pub fn create_table_sql() -> &'static str {
+
+impl Model for Price {
+    type T = Price;
+
+    fn create_table_sql() -> &'static str {
         r#"
         CREATE TABLE IF NOT EXISTS test_prices (
             id UUID,
@@ -42,11 +53,11 @@ impl Price {
         "#
     }
 
-    pub fn table_name() -> &'static str {
+    fn table_name() -> &'static str {
         "test_prices"
     }
 
-    pub fn column_names() -> Vec<&'static str> {
+    fn column_names() -> Vec<&'static str> {
         vec![
             "id",
             "created_at",
@@ -56,7 +67,7 @@ impl Price {
         ]
     }
 
-    pub fn to_row(&self) -> (Vec<&'static str>, Vec<String>) {
+    fn to_row(&self) -> (Vec<&'static str>, Vec<String>) {
         let columns = Self::column_names();
 
         let values = vec![
@@ -70,7 +81,7 @@ impl Price {
         (columns, values)
     }
 
-    pub fn insert_query(&self) -> String {
+    fn insert_query(&self) -> String {
         let (columns, values) = self.to_row();
         let columns_str = columns.join(", ");
         let values_str = values.join(", ");
@@ -83,7 +94,7 @@ impl Price {
         )
     }
 
-    pub fn batch_insert_query(prices: &[Price]) -> String {
+    fn batch_insert_query(prices: &[Price]) -> String {
         if prices.is_empty() {
             return String::new();
         }
@@ -106,6 +117,29 @@ impl Price {
             .collect();
 
         query.push_str(&values_parts.join(", "));
+        query
+    }
+
+    fn build_query(where_clause: Option<&str>, limit: Option<u64>, offset: Option<u64>) -> String {
+        let mut query = format!(
+            "SELECT id, created_at, updated_at, asset, price FROM {}",
+            Price::table_name()
+        );
+
+        if let Some(where_clause) = where_clause {
+            query.push_str(&format!(" WHERE {}", where_clause));
+        }
+
+        query.push_str(" ORDER BY created_at DESC");
+
+        if let Some(limit) = limit {
+            query.push_str(&format!(" LIMIT {}", limit));
+        }
+
+        if let Some(offset) = offset {
+            query.push_str(&format!(" OFFSET {}", offset));
+        }
+
         query
     }
 }
