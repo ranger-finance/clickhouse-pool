@@ -7,5 +7,9 @@ pub trait Model {
     fn to_row(&self) -> (Vec<&'static str>, Vec<String>);
     fn insert_query(&self) -> String;
     fn batch_insert_query(items: &[Self::T]) -> String;
-    fn build_select_query(where_clause: Option<&str>, limit: Option<u64>, offset: Option<u64>) -> String;
+    fn build_select_query(
+        where_clause: Option<&str>,
+        limit: Option<u64>,
+        offset: Option<u64>,
+    ) -> String;
 }

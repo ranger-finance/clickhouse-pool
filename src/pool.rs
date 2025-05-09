@@ -429,7 +429,7 @@ impl ClickhouseConnectionPool {
         let start = Instant::now();
 
         let timeout_duration = Duration::from_secs(self.config.clickhouse.connect_timeout_seconds);
-        
+
         for attempt in 0..3 {
             match tokio::time::timeout(timeout_duration, self.pool.get()).await {
                 Ok(Ok(conn)) => {
@@ -447,7 +447,11 @@ impl ClickhouseConnectionPool {
                         );
                     }
 
-                    log::debug!("Connection acquired in {:?} (attempt {})", duration, attempt + 1);
+                    log::debug!(
+                        "Connection acquired in {:?} (attempt {})",
+                        duration,
+                        attempt + 1
+                    );
                     return Ok(conn);
                 }
                 Ok(Err(e)) => {
@@ -458,8 +462,12 @@ impl ClickhouseConnectionPool {
                         );
                     }
 
-                    log::warn!("Failed to get connection from pool (attempt {}): {}", attempt + 1, e);
-                    
+                    log::warn!(
+                        "Failed to get connection from pool (attempt {}): {}",
+                        attempt + 1,
+                        e
+                    );
+
                     if attempt >= 2 {
                         return Err(ClickhouseError::Pool(e.to_string()));
                     }
@@ -477,7 +485,7 @@ impl ClickhouseConnectionPool {
                         attempt + 1,
                         timeout_duration
                     );
-                    
+
                     if attempt >= 2 {
                         return Err(ClickhouseError::Timeout);
                     }
@@ -486,7 +494,9 @@ impl ClickhouseConnectionPool {
             let backoff = Duration::from_millis(50 * 2u64.pow(attempt));
             tokio::time::sleep(backoff).await;
         }
-        Err(ClickhouseError::Pool("Failed to get connection after retries".to_string()))
+        Err(ClickhouseError::Pool(
+            "Failed to get connection after retries".to_string(),
+        ))
     }
 
     pub async fn shutdown(&self) -> Result<(), ClickhouseError> {
@@ -620,7 +630,7 @@ impl ClickhouseConnectionPool {
                 name: "clickhouse_connection_recycling_seconds",
                 help: "Time taken for connection recycling",
                 label_names: &["operation"],
-            },            
+            },
         ];
 
         metrics.with_metric_configs(&metric_configs).ok();
@@ -628,7 +638,7 @@ impl ClickhouseConnectionPool {
 
     pub fn status(&self) -> PoolMetrics {
         let status = self.pool.status();
-        
+
         PoolMetrics {
             size: status.size,
             available: status.available,
