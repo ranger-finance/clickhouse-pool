@@ -69,7 +69,7 @@ impl PoolManager {
             return Ok(0);
         }
         
-        let to_add = std::cmp::min(deficit, 20);
+        let to_add = deficit;
         log::info!("Attempting to add {} new connections to pool", to_add);
         
         let mut added = 0;
