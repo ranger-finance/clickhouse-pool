@@ -37,6 +37,10 @@ impl PoolManager {
         }
     }
 
+    pub fn get_pool(&self) -> Arc<ClickhouseConnectionPool> {
+        self.pool.clone()
+    }
+
     pub fn seconds_since_last_recycle(&self) -> u64 {
         let last = self.last_recycle_time.load(std::sync::atomic::Ordering::SeqCst);
         if last == 0 {
@@ -62,6 +66,7 @@ impl PoolManager {
         self.last_recycle_time.store(now, std::sync::atomic::Ordering::SeqCst);
         
         let status = self.pool.status();
+        log::info!("Clickhouse pool metrics: {:?}", status);
         
         let to_check = std::cmp::min(max_to_recycle, status.available);
         
