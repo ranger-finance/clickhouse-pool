@@ -429,52 +429,64 @@ impl ClickhouseConnectionPool {
         let start = Instant::now();
 
         let timeout_duration = Duration::from_secs(self.config.clickhouse.connect_timeout_seconds);
+        
+        for attempt in 0..3 {
+            match tokio::time::timeout(timeout_duration, self.pool.get()).await {
+                Ok(Ok(conn)) => {
+                    let duration = start.elapsed();
 
-        match tokio::time::timeout(timeout_duration, self.pool.get()).await {
-            Ok(Ok(conn)) => {
-                let duration = start.elapsed();
+                    if let Some(metrics) = &self.metrics {
+                        metrics.set_gauge_vec_mut(
+                            "clickhouse_connection_acquisition_seconds",
+                            &["success"],
+                            duration.as_secs_f64(),
+                        );
+                        metrics.inc_int_counter_vec_mut(
+                            "clickhouse_connection_acquisition_total",
+                            &["success"],
+                        );
+                    }
 
-                if let Some(metrics) = &self.metrics {
-                    metrics.set_gauge_vec_mut(
-                        "clickhouse_connection_acquisition_seconds",
-                        &["success"],
-                        duration.as_secs_f64(),
-                    );
-                    metrics.inc_int_counter_vec_mut(
-                        "clickhouse_connection_acquisition_total",
-                        &["success"],
-                    );
+                    log::debug!("Connection acquired in {:?} (attempt {})", duration, attempt + 1);
+                    return Ok(conn);
                 }
+                Ok(Err(e)) => {
+                    if let Some(metrics) = &self.metrics {
+                        metrics.inc_int_counter_vec_mut(
+                            "clickhouse_connection_acquisition_total",
+                            &["failure"],
+                        );
+                    }
 
-                log::debug!("Connection acquired in {:?}", duration);
-                Ok(conn)
-            }
-            Ok(Err(e)) => {
-                if let Some(metrics) = &self.metrics {
-                    metrics.inc_int_counter_vec_mut(
-                        "clickhouse_connection_acquisition_total",
-                        &["failure"],
-                    );
+                    log::warn!("Failed to get connection from pool (attempt {}): {}", attempt + 1, e);
+                    
+                    if attempt >= 2 {
+                        return Err(ClickhouseError::Pool(e.to_string()));
+                    }
                 }
+                Err(_) => {
+                    if let Some(metrics) = &self.metrics {
+                        metrics.inc_int_counter_vec_mut(
+                            "clickhouse_connection_acquisition_total",
+                            &["timeout"],
+                        );
+                    }
 
-                log::warn!("Failed to get connection from pool: {}", e);
-                Err(ClickhouseError::Pool(e.to_string()))
-            }
-            Err(_) => {
-                if let Some(metrics) = &self.metrics {
-                    metrics.inc_int_counter_vec_mut(
-                        "clickhouse_connection_acquisition_total",
-                        &["timeout"],
+                    log::warn!(
+                        "Timed out waiting for connection (attempt {}) after {:?}",
+                        attempt + 1,
+                        timeout_duration
                     );
+                    
+                    if attempt >= 2 {
+                        return Err(ClickhouseError::Timeout);
+                    }
                 }
-
-                log::warn!(
-                    "Timed out waiting for connection after {:?}",
-                    timeout_duration
-                );
-                Err(ClickhouseError::Timeout)
             }
+            let backoff = Duration::from_millis(50 * 2u64.pow(attempt));
+            tokio::time::sleep(backoff).await;
         }
+        Err(ClickhouseError::Pool("Failed to get connection after retries".to_string()))
     }
 
     pub async fn shutdown(&self) -> Result<(), ClickhouseError> {

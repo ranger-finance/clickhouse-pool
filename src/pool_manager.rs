@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use crate::config::DatalakeConfig;
 use crate::metrics::SharedRegistrar;
@@ -53,6 +54,47 @@ impl PoolManager {
             .as_secs();
             
         now.saturating_sub(last)
+    }
+
+    pub async fn refill_connection_pool(&self) -> Result<usize, ClickhouseError> {
+        let pool = self.get_pool();
+        let status = pool.status();
+        
+        let current_total = status.size;
+        let target_total = self.config.clickhouse.max_connections as usize;
+        let deficit = target_total.saturating_sub(current_total);
+        
+        if deficit == 0 {
+            log::info!("Deficit = 0");
+            return Ok(0);
+        }
+        
+        let to_add = std::cmp::min(deficit, 20);
+        log::info!("Attempting to add {} new connections to pool", to_add);
+        
+        let mut added = 0;
+        
+        for i in 0..to_add {
+            match pool.get_connection().await {
+                Ok(conn) => {
+                    match conn.health_check().await {
+                        Ok(_) => {
+                            added += 1;
+                        }
+                        Err(e) => {
+                            log::warn!("New connection failed health check: {}", e);
+                        }
+                    }
+                }
+                Err(e) => {
+                    log::error!("Failed to create new connection {}/{}: {}", i+1, to_add, e);
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                }
+            }
+        }
+        
+        log::info!("Added {}/{} new connections to pool", added, to_add);
+        Ok(added)
     }
 
     pub async fn recycle_idle_connections(&self, max_to_recycle: usize) -> Result<usize, ClickhouseError> {
