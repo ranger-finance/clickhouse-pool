@@ -37,6 +37,20 @@ impl PoolManager {
         }
     }
 
+    pub fn seconds_since_last_recycle(&self) -> u64 {
+        let last = self.last_recycle_time.load(std::sync::atomic::Ordering::SeqCst);
+        if last == 0 {
+            return u64::MAX;
+        }
+        
+        let now = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+            
+        now.saturating_sub(last)
+    }
+
     pub async fn recycle_idle_connections(&self, max_to_recycle: usize) -> Result<usize, ClickhouseError> {
         log::info!("Starting connection recycling - checking up to {} connections", max_to_recycle);
         let start = std::time::Instant::now();
