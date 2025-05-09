@@ -120,7 +120,7 @@ impl Model for Price {
         query
     }
 
-    fn build_query(where_clause: Option<&str>, limit: Option<u64>, offset: Option<u64>) -> String {
+    fn build_select_query(where_clause: Option<&str>, limit: Option<u64>, offset: Option<u64>) -> String {
         let mut query = format!(
             "SELECT id, created_at, updated_at, asset, price FROM {}",
             Price::table_name()

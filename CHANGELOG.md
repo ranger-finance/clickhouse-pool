@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Note:** Version 0 of Semantic Versioning is handled differently from version 1 and above.
 The minor version will be incremented upon a breaking change and the patch version will be incremented for features.
 
+## [0.1.2] - 2025-05-09
+
+### Features
+
+- Add periodic connection recycler to `PoolManager` using `recycle_idle_connections`
+
+### Fixes
+
+### Breaking
+
+- Change name from `build_query()` to `build_select_query()`
+
 ## [0.1.1] - 2025-04-10
 
 ### Features

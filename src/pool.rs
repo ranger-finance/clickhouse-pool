@@ -597,8 +597,33 @@ impl ClickhouseConnectionPool {
                 help: "Total number of connection acquisition attempts",
                 label_names: &["status"],
             },
+            MetricConfig {
+                kind: Kind::IntCounterVec,
+                name: "clickhouse_connections_recycled_total",
+                help: "Total number of connections recycled",
+                label_names: &["reason"],
+            },
+            MetricConfig {
+                kind: Kind::GaugeVec,
+                name: "clickhouse_connection_recycling_seconds",
+                help: "Time taken for connection recycling",
+                label_names: &["operation"],
+            },            
         ];
 
         metrics.with_metric_configs(&metric_configs).ok();
+    }
+
+    pub fn status(&self) -> PoolMetrics {
+        let status = self.pool.status();
+        
+        PoolMetrics {
+            size: status.size,
+            available: status.available,
+            in_use: status.size - status.available,
+            max_size: status.max_size,
+            min_size: status.max_size,
+            waiters: status.waiting,
+        }
     }
 }

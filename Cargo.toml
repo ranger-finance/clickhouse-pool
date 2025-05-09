@@ -1,6 +1,6 @@
 [package]
 name = "clickhouse-connection-pool"
-version = "0.1.1"
+version = "0.1.2"
 description = "A connection pooling library for ClickHouse in Rust, built on top of deadpool."
 edition = "2021"
 keywords = ["clickhouse", "database", "tokio", "pooling"]

@@ -122,7 +122,7 @@ async fn insert_test_data(pool_manager: &Arc<PoolManager>) -> Result<(), Box<dyn
 }
 
 async fn get_all_prices(pool_manager: &Arc<PoolManager>, limit: Option<u64>, offset: Option<u64>) -> Result<Vec<Price>> {
-    let query = Price::build_query(None, limit, offset);
+    let query = Price::build_select_query(None, limit, offset);
     
     let result = pool_manager.execute_select_with_retry(&query).await?;
         
