@@ -48,8 +48,7 @@ impl PoolManager {
     }
 
     pub fn seconds_since_last_recycle(&self) -> u64 {
-        let last = self
-            .last_recycle_time;
+        let last = self.last_recycle_time;
 
         if last == 0 {
             return u64::MAX;
@@ -331,26 +330,30 @@ impl PoolManager {
         }
     }
 
-    pub fn create_batch_processor<M>(&self, batch_size: usize, max_wait_ms: u64) -> BatchSender<M::T>
+    pub fn create_batch_processor<M>(
+        &self,
+        batch_size: usize,
+        max_wait_ms: u64,
+    ) -> BatchSender<M::T>
     where
         M: Model + Send + Sync + 'static,
         M::T: Clone + Send + 'static,
     {
         let (tx, mut rx) = mpsc::channel(1000);
-        
+
         let pool_manager = self.clone();
-        
+
         tokio::spawn(async move {
             let mut batch = Vec::with_capacity(batch_size);
             let mut last_flush = Instant::now();
             let mut flush_interval = interval(Duration::from_millis(100));
-            
+
             loop {
                 tokio::select! {
                     cmd = rx.recv() => match cmd {
                         Some(BatchCommand::Add(item)) => {
                             batch.push(item);
-                            
+
                             if batch.len() >= batch_size {
                                 Self::process_batch::<M>(&pool_manager, &mut batch).await;
                                 last_flush = Instant::now();
@@ -364,7 +367,7 @@ impl PoolManager {
                         },
                         None => break,
                     },
-                    
+
                     _ = flush_interval.tick() => {
                         if !batch.is_empty() && last_flush.elapsed() >= Duration::from_millis(max_wait_ms) {
                             Self::process_batch::<M>(&pool_manager, &mut batch).await;
@@ -373,32 +376,36 @@ impl PoolManager {
                     }
                 }
             }
-            
+
             if !batch.is_empty() {
                 Self::process_batch::<M>(&pool_manager, &mut batch).await;
             }
         });
-        
+
         BatchSender { tx }
     }
 
-    async fn process_batch<M>(pool_manager: &PoolManager, batch: &mut Vec<M::T>) 
-    where 
+    async fn process_batch<M>(pool_manager: &PoolManager, batch: &mut Vec<M::T>)
+    where
         M: Model,
         M::T: Clone,
     {
         if batch.is_empty() {
             return;
         }
-        
+
         let items = std::mem::take(batch);
-        
+
         let query = M::batch_insert_query(&items);
-        
+
         match pool_manager.execute_with_retry(&query).await {
             Ok(_) => {
-                log::info!("Successfully inserted {} items into {}", items.len(), M::table_name());
-            },
+                log::info!(
+                    "Successfully inserted {} items into {}",
+                    items.len(),
+                    M::table_name()
+                );
+            }
             Err(e) => {
                 log::error!("Error inserting batch into {}: {}", M::table_name(), e);
                 batch.extend(items);

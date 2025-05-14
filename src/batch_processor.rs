@@ -13,13 +13,15 @@ pub struct BatchSender<T> {
 
 impl<T> BatchSender<T> {
     pub async fn add(&self, item: T) -> Result<(), ClickhouseError> {
-        self.tx.send(BatchCommand::Add(item))
+        self.tx
+            .send(BatchCommand::Add(item))
             .await
             .map_err(|_| ClickhouseError::BatchInsertionError("Channel closed".to_string()))
     }
-    
+
     pub async fn flush(&self) -> Result<(), ClickhouseError> {
-        self.tx.send(BatchCommand::Flush)
+        self.tx
+            .send(BatchCommand::Flush)
             .await
             .map_err(|_| ClickhouseError::BatchInsertionError("Channel closed".to_string()))
     }
