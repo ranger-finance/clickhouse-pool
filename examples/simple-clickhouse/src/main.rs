@@ -29,10 +29,22 @@ async fn main() -> Result<()> {
     println!("Sleeping...");
     sleep(Duration::from_secs(3)).await;
     println!("Awake...");
-        
-    let _ = insert_test_data(&pool_manager).await;
-    sleep(Duration::from_secs(3)).await;
 
+    let prices_sender = pool_manager.create_batch_processor::<Price>(
+        25,
+        500
+    );
+
+    for i in 0..100 {
+        for asset in ["SOL", "BTC"] {
+            let _ = prices_sender.add(Price::new(
+                Uuid::new_v4(),
+                asset.to_string(),
+                42.58 + (i as f64 * 0.01),
+            )).await;
+        }
+    }
+        
     let prices = get_all_prices(&pool_manager, Some(20), None).await?; 
     println!("Retrieved 20 prices: {:?}", prices);
     

@@ -29,6 +29,9 @@ pub enum ClickhouseError {
 
     #[error("Shutdown in progress")]
     ShuttingDown,
+
+    #[error("Batch insertion error: {0}")]
+    BatchInsertionError(String)
 }
 
 impl From<tokio::time::error::Elapsed> for ClickhouseError {

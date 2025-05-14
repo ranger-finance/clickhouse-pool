@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Note:** Version 0 of Semantic Versioning is handled differently from version 1 and above.
 The minor version will be incremented upon a breaking change and the patch version will be incremented for features.
 
+## [0.1.7] - 2025-05-14
+
+### Features
+
+- Add batch processing utility functions optimized for batch insertions
+
+### Fixes
+
+### Breaking
+
 ## [0.1.6] - 2025-05-09
 
 ### Features
