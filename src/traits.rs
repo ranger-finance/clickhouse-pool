@@ -13,3 +13,7 @@ pub trait Model {
         offset: Option<u64>,
     ) -> String;
 }
+
+pub trait PartitionKey {
+    fn partition_key(&self) -> String;
+}

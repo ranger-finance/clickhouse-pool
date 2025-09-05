@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Note:** Version 0 of Semantic Versioning is handled differently from version 1 and above.
 The minor version will be incremented upon a breaking change and the patch version will be incremented for features.
 
+## [0.1.8] - 2025-09-05
+
+### Features
+
+- Include PartitionKey trait for model structs to specify the partitioning key on their tables
+- Add partition-aware batch processing function to allow batch insertions in partitions. This is helpful in the case where there could be large partitions in the Clickhouse table and the batch of records exceeds the max. configured setting with the Clickhouse table
+
+### Fixes
+
+### Breaking
+
 ## [0.1.7] - 2025-05-14
 
 ### Features

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -5,7 +6,7 @@ use crate::batch_processor::{BatchCommand, BatchSender};
 use crate::config::DatalakeConfig;
 use crate::metrics::SharedRegistrar;
 use crate::pool::{get_query_type, ClickhouseConnectionPool, ClickhouseError};
-use crate::traits::Model;
+use crate::traits::{Model, PartitionKey};
 use anyhow::Result;
 use serde::de::DeserializeOwned;
 use tokio::sync::mpsc;
@@ -409,6 +410,107 @@ impl PoolManager {
             Err(e) => {
                 log::error!("Error inserting batch into {}: {}", M::table_name(), e);
                 batch.extend(items);
+            }
+        }
+    }
+
+    pub fn create_partition_aware_batch_processor<M>(
+        &self,
+        batch_size: usize,
+        max_wait_ms: u64,
+        max_partitions_per_batch: usize,
+    ) -> BatchSender<M::T>
+    where
+        M: Model + Send + Sync + 'static,
+        M::T: Clone + Send + PartitionKey + 'static,
+    {
+        let (tx, mut rx) = mpsc::channel::<BatchCommand<M::T>>(1000);
+        let pool_manager = self.clone();
+
+        tokio::spawn(async move {
+            let mut partition_batches: HashMap<String, Vec<M::T>> = HashMap::new();
+            let mut last_flush = Instant::now();
+            let mut flush_interval = interval(Duration::from_millis(100));
+
+            loop {
+                tokio::select! {
+                    cmd = rx.recv() => match cmd {
+                        Some(BatchCommand::Add(item)) => {
+                            let partition_key = item.partition_key();
+                            let partition_batch = partition_batches.entry(partition_key).or_insert_with(Vec::new);
+                            partition_batch.push(item);
+
+                            let should_flush_size = partition_batches.values().any(|batch| batch.len() >= batch_size);
+                            
+                            let should_flush_partitions = partition_batches.len() >= max_partitions_per_batch;
+
+                            if should_flush_size || should_flush_partitions {
+                                Self::process_partition_batches::<M>(&pool_manager, &mut partition_batches).await;
+                                last_flush = Instant::now();
+                            }
+                        },
+                        Some(BatchCommand::Flush) => {
+                            if !partition_batches.is_empty() {
+                                Self::process_partition_batches::<M>(&pool_manager, &mut partition_batches).await;
+                                last_flush = Instant::now();
+                            }
+                        },
+                        None => break,
+                    },
+
+                    _ = flush_interval.tick() => {
+                        if !partition_batches.is_empty() && last_flush.elapsed() >= Duration::from_millis(max_wait_ms) {
+                            Self::process_partition_batches::<M>(&pool_manager, &mut partition_batches).await;
+                            last_flush = Instant::now();
+                        }
+                    }
+                }
+            }
+
+            if !partition_batches.is_empty() {
+                Self::process_partition_batches::<M>(&pool_manager, &mut partition_batches).await;
+            }
+        });
+
+        BatchSender { tx }
+    }
+
+    async fn process_partition_batches<M>(
+        pool_manager: &PoolManager, 
+        partition_batches: &mut HashMap<String, Vec<M::T>>
+    )
+    where
+        M: Model,
+        M::T: Clone,
+    {
+        if partition_batches.is_empty() {
+            return;
+        }
+
+        for (partition_key, batch) in partition_batches.drain() {
+            if batch.is_empty() {
+                continue;
+            }
+
+            let query = M::batch_insert_query(&batch);
+
+            match pool_manager.execute_with_retry(&query).await {
+                Ok(_) => {
+                    log::info!(
+                        "Successfully inserted {} items into {} for partition {}",
+                        batch.len(),
+                        M::table_name(),
+                        partition_key
+                    );
+                }
+                Err(e) => {
+                    log::error!(
+                        "Error inserting batch into {} for partition {}: {}", 
+                        M::table_name(), 
+                        partition_key, 
+                        e
+                    );
+                }
             }
         }
     }
